@@ -13,8 +13,8 @@ import java.awt.geom.AffineTransform;
 
 public class gridpanel extends JPanel implements ActionListener, KeyListener{
 //------------variables------------//
-    public int[][] grid;
-    private int squareSize;
+    public static int[][] grid;
+    private static int squareSize;
     double degrees;
     float radian;
 
@@ -26,21 +26,21 @@ public class gridpanel extends JPanel implements ActionListener, KeyListener{
     int width = 10;
     int height = 10;
     int vel;
-    int px;
-    int py;
+
     double pi = 3.14159265359;
-    double pi2 = Math.PI/2;
-    double pi3 = 3 * Math.PI/2;
+    static double pi2 = Math.PI/2;
+    static double pi3 = 3 * Math.PI/2;
     private double speed;
     private int squareCenterX = 200;
     private int squareCenterY = 200;
     private static double angle = 0;
     static int pa = (int) angle;
     @SuppressWarnings("unused")
-    private static double maxMovementSpeed = 1;
+    private static double maxMovementSpeed = 0.1;
     private double minSpeed;
     private double maxSpeed;
-    static double movementSpeed = Math.sqrt(VelX*VelX + VelY*VelY);
+    static double dr = 0.0174533;
+    static double movementSpeed = Math.sqrt(VelX + VelY);
 
     
     
@@ -50,16 +50,16 @@ public class gridpanel extends JPanel implements ActionListener, KeyListener{
 
 //----------------------------//
 
-    int x;
-    int y;
+    static int x;
+    static int y;
     
 //---------------------------------//
 
 
 //------------map definitions------------//
     public gridpanel(int[][] grid, int squareSize) {
-        this.grid = grid;
-        this.squareSize = squareSize;
+        gridpanel.grid = grid;
+        gridpanel.squareSize = squareSize;
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
@@ -192,36 +192,43 @@ public class gridpanel extends JPanel implements ActionListener, KeyListener{
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) speed = 0;
     }
 //------------------------------------//    
+static float dist(float ax, float ay, float bx, float by, float ang){
+    return ( (bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+}
 
 
 //------------raycaster-----------//
-public void raycaster(){
+static void raycaster(){
     int r, mx, my, mp, dof;
-    float rx = x, ry = y, ra, xo = 0, yo = 0;
+    float rx = x, ry = y, ra, xo = 0, yo = 0, distT;
 
-    ra = (float) angle;
+    ra = (float) ((float) angle - dr * 30);
 
-    for(r = 0; r<1; r++){
+    if(ra<0){  ra += 2 * Math.PI;  }
+    if(ra>2 * Math.PI){  ra -= 2 * Math.PI;  }
+
+    for(r = 0; r<60; r++){
         dof = 0;
+        float distH = 100000000, hx = x, hy = y;
         float aTan = (float) (-1/Math.tan(ra));
 
         if(ra>Math.PI){
-            ry = (float) (( ( (int) py >>6 ) >> 6) - 0.0001); 
-            rx = (py-ry) * aTan + x; 
+            ry = (float) (( ( (int) y >>6 ) >> 6) - 0.0001); 
+            rx = (y-ry) * aTan + x; 
             yo = -64; 
-            xo = yo * aTan;  
+            xo = yo * aTan;
         }
         
         if(ra<Math.PI){
-            ry = (float) (( ( (int) py >>6 ) >> 6) + 64); 
-            rx = (py-ry) * aTan + x; 
+            ry = (float) (( ( (int) y >>6 ) >> 6) + 64); 
+            rx = (y-ry) * aTan + x; 
             yo = 64; 
             xo = yo * aTan;  
         }
 
         if(ra==0 || ra==Math.PI){
-            rx = px; 
-            ry=py; 
+            rx = x; 
+            ry=y; 
             dof = 8;   
         }
 
@@ -229,36 +236,42 @@ public void raycaster(){
             mx = (int) (rx) >> 6; 
             my = (int) (ry) >> 6; 
             mp = my * x + mx;
-            if(mp < x * y && grid[my][mx] == 1) {
+            if(mp > 0 && mp < x * y && grid[my][mx] == 1) {
                 dof = 8;
-            } else {
+                hx = rx;
+                hy = ry;
+                distH = dist(x, y, hx, hy, ra);
+            } 
+            else {
                 rx += xo;
                 ry = yo; 
                 dof += 1; 
             }
         }
-
+//-----------------------//
 
         dof = 0;
+        distT = 0;
+        float distV = 100000000, vx = x, vy = y;
         float nTan = (float) (-1/Math.tan(ra));
 
         if(ra > pi2 && ra < pi3){
-            rx = (float) (( ( (int) px >>6 ) >> 6) - 0.0001); 
-            ry = (px-rx) * nTan + y; 
+            rx = (float) (( ( (int) x >>6 ) >> 6) - 0.0001); 
+            ry = (x-rx) * nTan + y; 
             yo = -64; 
             xo = yo * nTan;  
         }
         
         if(ra < pi2 || ra > pi3){
-            rx = (float) (( ( (int) px >>6 ) >> 6) + 64); 
-            ry = (px-rx) * nTan + y; 
+            rx = (float) (( ( (int) x >>6 ) >> 6) + 64); 
+            ry = (x-rx) * nTan + y; 
             yo = 64; 
             xo = yo * nTan;  
         }
 
         if(ra==0 || ra==Math.PI){
-            rx = px; 
-            ry=py; 
+            rx = x; 
+            ry = y; 
             dof = 8;   
         }
 
@@ -266,14 +279,32 @@ public void raycaster(){
             mx = (int) (rx) >> 6; 
             my = (int) (ry) >> 6; 
             mp = my * x + mx;
-            if(mp < x * y && grid[my][mx] == 1) {
+            if(mp > 0 && mp < x * y && grid[my][mx] == 1) {
                 dof = 8;
-            } else {
+                vx = rx;
+                vy = ry;
+                distV = dist(x, y, vx, vy, ra);
+            } 
+            else {
                 rx += xo;
                 ry = yo; 
                 dof += 1; 
             }
         }
+        if(distV<distH){  rx = vx; ry = vy; distT = distV;  }
+        if(distH<distV){  vx = hx; vy = hy; distT = distH;  }
+
+        float lineH = (squareSize * 320) / distT;
+
+        if(lineH > 320){  lineH = 320;  }
+
+
+
+
+
+        ra += dr;
+        if(ra<0){  ra += 2 * Math.PI;  }
+        if(ra>2 * Math.PI){  ra -= 2 * Math.PI;  }
     }
 }
 //-------------------------------//
@@ -302,6 +333,7 @@ public void raycaster(){
 
         frame.setVisible(true);
 
+        raycaster();
 
     }
 }

@@ -13,7 +13,7 @@ import java.awt.geom.AffineTransform;
 
 public class gridpanel extends JPanel implements ActionListener, KeyListener{
 //------------variables------------//
-    private int[][] grid;
+    public int[][] grid;
     private int squareSize;
     double degrees;
     float radian;
@@ -28,6 +28,9 @@ public class gridpanel extends JPanel implements ActionListener, KeyListener{
     int vel;
     int px;
     int py;
+    double pi = 3.14159265359;
+    double pi2 = Math.PI/2;
+    double pi3 = 3 * Math.PI/2;
     private double speed;
     private int squareCenterX = 200;
     private int squareCenterY = 200;
@@ -189,6 +192,91 @@ public class gridpanel extends JPanel implements ActionListener, KeyListener{
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) speed = 0;
     }
 //------------------------------------//    
+
+
+//------------raycaster-----------//
+public void raycaster(){
+    int r, mx, my, mp, dof;
+    float rx = x, ry = y, ra, xo = 0, yo = 0;
+
+    ra = (float) angle;
+
+    for(r = 0; r<1; r++){
+        dof = 0;
+        float aTan = (float) (-1/Math.tan(ra));
+
+        if(ra>Math.PI){
+            ry = (float) (( ( (int) py >>6 ) >> 6) - 0.0001); 
+            rx = (py-ry) * aTan + x; 
+            yo = -64; 
+            xo = yo * aTan;  
+        }
+        
+        if(ra<Math.PI){
+            ry = (float) (( ( (int) py >>6 ) >> 6) + 64); 
+            rx = (py-ry) * aTan + x; 
+            yo = 64; 
+            xo = yo * aTan;  
+        }
+
+        if(ra==0 || ra==Math.PI){
+            rx = px; 
+            ry=py; 
+            dof = 8;   
+        }
+
+        while(dof < 8){
+            mx = (int) (rx) >> 6; 
+            my = (int) (ry) >> 6; 
+            mp = my * x + mx;
+            if(mp < x * y && grid[my][mx] == 1) {
+                dof = 8;
+            } else {
+                rx += xo;
+                ry = yo; 
+                dof += 1; 
+            }
+        }
+
+
+        dof = 0;
+        float nTan = (float) (-1/Math.tan(ra));
+
+        if(ra > pi2 && ra < pi3){
+            rx = (float) (( ( (int) px >>6 ) >> 6) - 0.0001); 
+            ry = (px-rx) * nTan + y; 
+            yo = -64; 
+            xo = yo * nTan;  
+        }
+        
+        if(ra < pi2 || ra > pi3){
+            rx = (float) (( ( (int) px >>6 ) >> 6) + 64); 
+            ry = (px-rx) * nTan + y; 
+            yo = 64; 
+            xo = yo * nTan;  
+        }
+
+        if(ra==0 || ra==Math.PI){
+            rx = px; 
+            ry=py; 
+            dof = 8;   
+        }
+
+        while(dof < 8){
+            mx = (int) (rx) >> 6; 
+            my = (int) (ry) >> 6; 
+            mp = my * x + mx;
+            if(mp < x * y && grid[my][mx] == 1) {
+                dof = 8;
+            } else {
+                rx += xo;
+                ry = yo; 
+                dof += 1; 
+            }
+        }
+    }
+}
+//-------------------------------//
 
 
 //------------map and frame setup------------//
